@@ -160,7 +160,9 @@ class _OffersScreenState extends ConsumerState<OffersScreen> {
     final feed = ref.watch(offersFeedProvider);
     final feedData = feed.valueOrNull;
     final top = MediaQuery.paddingOf(context).top;
-    final bottomPad = Responsive.shellBottomReserve(context);
+    final bottomPad = GoRouter.of(context).canPop()
+        ? MediaQuery.paddingOf(context).bottom + 20
+        : Responsive.shellBottomReserve(context);
 
     final slots = feedData != null ? resolveOffersSectionSlots(feedData) : const <HomeSectionSlot>[];
     final showFlashPulse = feedData != null &&

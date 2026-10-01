@@ -50,7 +50,7 @@ abstract final class CategoriesTheme {
   /// توهج فيروزي ناعم حول البطاقة.
   static List<BoxShadow> cardGlow({double radius = cardRadius}) => [
         BoxShadow(
-          color: AppColors.primary.withValues(alpha: 0.10),
+          color: AppColors.primary.withValues(alpha: 0.16),
           blurRadius: 16,
           spreadRadius: -2,
           offset: const Offset(0, 6),

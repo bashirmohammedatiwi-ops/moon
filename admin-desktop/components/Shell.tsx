@@ -50,6 +50,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     title: "التسويق",
     items: [
       { href: "/banners", label: "البنرات", short: "ن" },
+      { href: "/spotlight", label: "سبوت لايت ✦", short: "سب" },
       { href: "/home-builder", label: "بناء الرئيسية", short: "ر" },
       { href: "/offers-builder", label: "بناء العروض", short: "عر" },
       { href: "/coupons", label: "الكوبونات", short: "ك" },

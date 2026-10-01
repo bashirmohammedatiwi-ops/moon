@@ -53,27 +53,31 @@ class HomeHeader extends ConsumerWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Brand mark — center
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 34,
+                      height: 34,
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: HomeTheme.petal,
+                        color: Colors.white,
                         shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.hairline, width: 1.1),
+                        boxShadow: AppColors.cardShadow,
                       ),
-                      child: const Icon(
-                        Icons.spa_outlined,
-                        size: 15,
-                        color: AppColors.primary,
+                      child: ClipOval(
+                        child: Image.asset(
+                          'assets/images/qamar_mark.png',
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.high,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       storeName,
-                      style: HomeTheme.displayTitle(size: 22),
+                      style: HomeTheme.displayTitle(size: 22, color: AppColors.inkDeep),
                     ),
                   ],
                 ),
@@ -128,12 +132,12 @@ class _SearchPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50,
+      height: 52,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(HomeTheme.pillRadius),
-        border: Border.all(color: HomeTheme.blushDeep.withValues(alpha: 0.8)),
-        boxShadow: HomeTheme.whisperLift,
+        border: Border.all(color: AppColors.hairline, width: 1.1),
+        boxShadow: AppColors.cardShadow,
       ),
       child: Row(
         children: [
@@ -147,14 +151,14 @@ class _SearchPill extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.search_rounded,
-                      size: 20,
-                      color: HomeTheme.inkMuted,
+                      size: 21,
+                      color: AppColors.primary,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         hint,
-                        style: HomeTheme.body(size: 14, color: HomeTheme.inkMuted),
+                        style: HomeTheme.body(size: 14, color: AppColors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -201,13 +205,21 @@ class _MiniAction extends StatelessWidget {
         margin: EdgeInsetsDirectional.only(end: last ? 4 : 0),
         alignment: Alignment.center,
         child: Container(
-          width: 34,
-          height: 34,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: HomeTheme.mist,
+            gradient: icon == Icons.barcode_reader ? AppColors.primaryGradient : null,
+            color: icon == Icons.barcode_reader ? null : AppColors.primarySoft,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: icon == Icons.barcode_reader ? Colors.transparent : AppColors.hairline,
+            ),
           ),
-          child: Icon(icon, size: 18, color: HomeTheme.inkSoft),
+          child: Icon(
+            icon,
+            size: 18,
+            color: icon == Icons.barcode_reader ? Colors.white : AppColors.primaryDark,
+          ),
         ),
       ),
     );

@@ -16,6 +16,7 @@ import '../widgets/home_banner_stage.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/l10n/locale_provider.dart';
 import '../widgets/home_category_grid.dart';
+import '../widgets/home_offers_promo.dart';
 import '../widgets/home_quick_dock.dart';
 import '../widgets/home_section_shell.dart';
 import '../widgets/home_theme.dart';
@@ -55,6 +56,7 @@ class _HeroHomeSectionState extends ConsumerState<HeroHomeSection> {
         if (cats.isNotEmpty) ...[
           const HomeSectionDivider(),
           HomeHeroCategoryStrip(categories: cats),
+          const HomeOffersPromoCard(),
         ],
       ],
     );

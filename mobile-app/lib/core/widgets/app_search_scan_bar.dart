@@ -29,14 +29,14 @@ class AppSearchScanBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fill = fillColor ?? Colors.white;
-    final border = borderColor ?? AppColors.hairline.withValues(alpha: 0.9);
+    final border = borderColor ?? AppColors.hairline;
 
     return Container(
       height: height,
       decoration: BoxDecoration(
         color: fill,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: border, width: 0.9),
+        border: Border.all(color: border, width: 1.1),
         boxShadow: AppColors.cardShadow,
       ),
       child: Row(
@@ -54,7 +54,7 @@ class AppSearchScanBar extends StatelessWidget {
                   padding: const EdgeInsetsDirectional.only(start: 18, end: 8),
                   child: Row(
                     children: [
-                      Icon(Icons.search_rounded, size: 21, color: AppColors.primary.withValues(alpha: 0.75)),
+                      Icon(Icons.search_rounded, size: 21, color: AppColors.primary),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -64,7 +64,7 @@ class AppSearchScanBar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.textMuted.withValues(alpha: 0.95),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ),

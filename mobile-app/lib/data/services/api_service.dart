@@ -19,6 +19,7 @@ import '../models/order.dart';
 import '../models/paginated.dart';
 import '../models/product.dart';
 import '../models/review.dart';
+import '../models/spotlight_item.dart';
 import '../models/user.dart';
 
 export '../../core/network/api_exception.dart' show ApiException, parseApiErrorMessage;
@@ -86,6 +87,24 @@ class ApiService {
         serialize: (m) => m,
       );
       return HomeFeed.fromJson(raw);
+    } catch (e) {
+      _throw(e);
+    }
+  }
+
+  Future<List<SpotlightItem>> getSpotlight({bool forceRefresh = false}) async {
+    try {
+      final r = await _dio.get(
+        '/spotlight',
+        queryParameters: {'active': '1'},
+        options: Options(extra: {'auth': false}),
+      );
+      final data = _data(r);
+      final list = data is List ? data : const [];
+      return list
+          .map((e) => SpotlightItem.fromJson(asMap(e)))
+          .where((item) => item.imageUrl.isNotEmpty)
+          .toList();
     } catch (e) {
       _throw(e);
     }

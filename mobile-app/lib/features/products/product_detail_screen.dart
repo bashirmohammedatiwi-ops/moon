@@ -201,33 +201,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       setState(() => _quantity = v);
                     },
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      ProductDetailTheme.padH,
-                      10,
-                      ProductDetailTheme.padH,
-                      0,
-                    ),
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(40),
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primarySoft),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () => context.push('/assistant', extra: product.id),
-                      icon: const Icon(Icons.auto_awesome, size: 17),
-                      label: Text(
-                        ref.s.isAr ? 'اسأل المساعد عن هذا المنتج' : 'Ask AI about this product',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
                   if (product.hasMultipleDisplayableShades)
                     Container(
                       margin: const EdgeInsets.fromLTRB(

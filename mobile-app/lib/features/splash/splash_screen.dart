@@ -58,13 +58,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     final tagline = widget.lang == 'ar' ? 'جمالك… على ضوء القمر' : 'beauty under the moon light';
 
     return Scaffold(
-      backgroundColor: SplashTheme.background,
+      backgroundColor: Colors.white,
       body: DecoratedBox(
         decoration: const BoxDecoration(
-          gradient: AppColors.homeBackgroundGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.white, AppColors.mist, AppColors.scaffold],
+            stops: [0.0, 0.45, 1.0],
+          ),
         ),
         child: AmbientBackground(
-          baseColor: SplashTheme.background,
+          baseColor: Colors.white,
           child: SafeArea(
             child: Center(
               child: AnimatedBuilder(
@@ -87,13 +92,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 148,
-                        height: 148,
-                        padding: const EdgeInsets.all(18),
+                        width: 168,
+                        height: 168,
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.white,
-                          border: Border.all(color: AppColors.accent.withValues(alpha: 0.45), width: 1.4),
+                          border: Border.all(color: AppColors.primary, width: 2),
                           boxShadow: AppColors.floatShadow,
                         ),
                         child: Image.asset(
@@ -109,7 +114,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: brandTitleStyle(
                           lang: widget.lang,
                           size: 36,
-                          color: SplashTheme.charcoal,
+                          color: AppColors.inkDeep,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -121,7 +126,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         style: GoogleFonts.cairo(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w600,
-                          color: SplashTheme.tealDark.withValues(alpha: 0.85),
+                          color: AppColors.primaryDark,
                           height: 1.45,
                         ),
                       ),

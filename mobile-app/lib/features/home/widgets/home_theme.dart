@@ -37,17 +37,17 @@ abstract final class HomeTheme {
   static const accent = CartTheme.brand;
   static const accentDark = CartTheme.brandDark;
   static const accentLight = CartTheme.brandSoft;
-  static const accentMid = Color(0xFFC8E9ED);
+  static const accentMid = Color(0xFF9FDDE4);
 
   static const sage = CartTheme.brand;
   static const sageDark = CartTheme.brandDark;
   static const sageLight = CartTheme.brandSoft;
   static const sageMid = CartTheme.brandWash;
 
-  static const roseWash = Color(0xFFE0F4F6);
+  static const roseWash = Color(0xFFB8E8ED);
   static const sand = pearl;
   static const lavender = CartTheme.brandWash;
-  static const blush = Color(0xFFF5FCFD);
+  static const blush = Color(0xFFEAF7F9);
 
   static const ink = CartTheme.charcoal;
   static const inkSoft = AppColors.textSecondary;
@@ -55,14 +55,14 @@ abstract final class HomeTheme {
   static const divider = AppColors.border;
 
   static const categoryTileColors = [
-    Color(0xFFE6F7F9),
-    Color(0xFFDFF4F6),
-    Color(0xFFF2FBFC),
-    Color(0xFFD0EFF2),
-    Color(0xFFE8F8FA),
-    Color(0xFFC8E9ED),
-    Color(0xFFF5FCFD),
-    Color(0xFFE0F4F6),
+    Color(0xFFB8E8ED),
+    Color(0xFF9FDDE4),
+    Color(0xFFD6F2F5),
+    Color(0xFF8ECFD8),
+    Color(0xFFC8EBEF),
+    Color(0xFF7EC4CE),
+    Color(0xFFEAF7F9),
+    Color(0xFFA8DFE6),
   ];
 
   static TextStyle brandTitle({double size = 22, required String lang, Color? color}) =>
@@ -98,16 +98,16 @@ abstract final class HomeTheme {
 
   static TextStyle get overline => GoogleFonts.cairo(
         fontSize: 10,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
-        color: accent,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.6,
+        color: accentDark,
         height: 1.2,
       );
 
   static TextStyle get viewAll => GoogleFonts.cairo(
         fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: accent,
+        fontWeight: FontWeight.w800,
+        color: accentDark,
         height: 1.2,
       );
 
@@ -120,7 +120,8 @@ abstract final class HomeTheme {
   static BoxDecoration sectionSurface({Color? tint}) => BoxDecoration(
         color: tint ?? surface,
         borderRadius: BorderRadius.circular(cardRadius),
-        border: Border.all(color: divider),
+        border: Border.all(color: AppColors.hairline.withValues(alpha: 0.75)),
+        boxShadow: AppColors.cardShadow,
       );
 
   static TextStyle get chipLabel => GoogleFonts.cairo(
@@ -152,14 +153,7 @@ abstract final class HomeTheme {
         height: 1.2,
       );
 
-  static List<BoxShadow> get whisperLift => [
-        BoxShadow(
-          color: ink.withValues(alpha: 0.03),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
-          spreadRadius: -1,
-        ),
-      ];
+  static List<BoxShadow> get whisperLift => AppColors.cardShadow;
 
   static List<BoxShadow> get galleryShadow => [
         BoxShadow(
@@ -240,10 +234,10 @@ abstract final class HomeTheme {
     );
 
   // Legacy aliases — مستخدمة في أقسام قديمة، ستنظمف عند تمريرة التفاصيل.
-  static const petal = roseWash;
-  static const mist = surfaceMuted;
-  static const blushDeep = divider;
-  static const blushMid = divider;
+  static const petal = AppColors.primarySoft;
+  static const mist = AppColors.mist;
+  static const blushDeep = AppColors.hairline;
+  static const blushMid = AppColors.border;
 }
 
 class HomeCanvasBackground extends StatelessWidget {
@@ -388,7 +382,7 @@ class HomeFilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? HomeTheme.accent : HomeTheme.surface,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(HomeTheme.pillRadius),
       child: InkWell(
         onTap: onTap,
@@ -396,8 +390,19 @@ class HomeFilterPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
+            gradient: selected ? AppColors.primaryGradient : null,
+            color: selected ? null : HomeTheme.surface,
             borderRadius: BorderRadius.circular(HomeTheme.pillRadius),
-            border: Border.all(color: selected ? HomeTheme.accent : HomeTheme.divider),
+            border: Border.all(color: selected ? Colors.transparent : AppColors.hairline),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.24),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

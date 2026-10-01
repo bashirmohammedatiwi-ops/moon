@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:go_router/go_router.dart';
-
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/utils/responsive.dart';
@@ -11,7 +9,7 @@ import '../cart/cart_provider.dart';
 import '../cart/cart_screen.dart';
 import '../categories/categories_screen.dart';
 import '../home/home_screen.dart';
-import '../offers/offers_screen.dart';
+import '../spotlight/spotlight_screen.dart';
 import '../profile/account_screen.dart';
 import 'shell_nav_bar.dart';
 
@@ -38,13 +36,6 @@ class _MainShellState extends ConsumerState<MainShell> {
 
     return Scaffold(
       backgroundColor: HomeTheme.canvas,
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'assistant-fab',
-        tooltip: ref.watch(stringsProvider).isAr ? 'المساعد الذكي' : 'AI Assistant',
-        backgroundColor: HomeTheme.accent,
-        onPressed: () => context.push('/assistant'),
-        child: const Icon(Icons.auto_awesome, color: Colors.white),
-      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -66,7 +57,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                   enabled: index == 2,
                   child: _TabEntrance(
                     active: index == 2,
-                    child: _visited.contains(2) ? const OffersScreen() : const SizedBox.shrink(),
+                    child: _visited.contains(2) ? const SpotlightScreen() : const SizedBox.shrink(),
                   ),
                 ),
                 TickerMode(

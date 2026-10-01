@@ -16,11 +16,13 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { BannersService } from "./banners.service";
+import { SpotlightService } from "./spotlight.service";
 import { CouponsService } from "./coupons.service";
 import { HomeBlocksService } from "./home-blocks.service";
 import { PackagesService } from "./packages.service";
 import { SkinConcernsService } from "./skin-concerns.service";
 import { CreateBannerDto, UpdateBannerDto } from "./dto/banner.dto";
+import { CreateSpotlightDto, UpdateSpotlightDto } from "./dto/spotlight.dto";
 import { CreatePackageDto, UpdatePackageDto } from "./dto/package.dto";
 import { CreateSkinConcernDto, UpdateSkinConcernDto } from "./dto/skin-concern.dto";
 
@@ -29,6 +31,7 @@ import { CreateSkinConcernDto, UpdateSkinConcernDto } from "./dto/skin-concern.d
 export class CmsController {
   constructor(
     private readonly banners: BannersService,
+    private readonly spotlight: SpotlightService,
     private readonly packages: PackagesService,
     private readonly coupons: CouponsService,
     private readonly home: HomeBlocksService,
@@ -53,6 +56,26 @@ export class CmsController {
   @ApiBearerAuth() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @Delete("banners/:id") removeBanner(@Param("id") id: string) {
     return this.banners.remove(id);
+  }
+
+  // ---- Spotlight (vertical promo feed) ----
+  @Public() @Get("spotlight") listSpotlight(@Query("active") active?: string) {
+    return this.spotlight.list(active === "1");
+  }
+
+  @ApiBearerAuth() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Post("spotlight") createSpotlight(@Body() data: CreateSpotlightDto) {
+    return this.spotlight.create(data);
+  }
+
+  @ApiBearerAuth() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Patch("spotlight/:id") updateSpotlight(@Param("id") id: string, @Body() data: UpdateSpotlightDto) {
+    return this.spotlight.update(id, data);
+  }
+
+  @ApiBearerAuth() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Delete("spotlight/:id") removeSpotlight(@Param("id") id: string) {
+    return this.spotlight.remove(id);
   }
 
   // ---- Packages ----

@@ -22,6 +22,8 @@ String? resolveDeepLink(Uri uri) {
       break;
     case '/offers':
       return '/offers';
+    case '/spotlight':
+      return '/spotlight';
     case '/categories':
     case '/categories-tab':
       return '/categories-tab';
@@ -29,8 +31,6 @@ String? resolveDeepLink(Uri uri) {
       return '/brands';
     case '/cart':
       return '/cart';
-    case '/assistant':
-      return '/assistant';
     case '/privacy':
       return '/privacy';
     case '/terms':

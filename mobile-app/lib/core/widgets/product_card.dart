@@ -53,7 +53,7 @@ class ProductCard extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppRadius.xl),
-            border: Border.all(color: AppColors.hairline.withValues(alpha: 0.7), width: 0.85),
+            border: Border.all(color: AppColors.hairline, width: 1),
             boxShadow: AppColors.cardShadow,
           ),
           child: Column(

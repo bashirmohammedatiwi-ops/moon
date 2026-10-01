@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../cart/widgets/cart_theme.dart';
 import '../../profile/widgets/profile_ui.dart';
 
@@ -49,24 +50,11 @@ class AuthShell extends StatelessWidget {
                     height: 96,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          CartTheme.brandSoft,
-                          Colors.white,
-                          CartTheme.brandWash,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: CartTheme.brand.withValues(alpha: 0.16),
-                          blurRadius: 26,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      color: Colors.white,
+                      border: Border.all(color: AppColors.primary, width: 2),
+                      boxShadow: AppColors.floatShadow,
                     ),
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     child: Image.asset('assets/images/qamar_logo.png'),
                   ),
                   const SizedBox(height: 10),
@@ -92,7 +80,7 @@ class AuthShell extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13.5,
                   height: 1.45,
-                  color: CartTheme.charcoal.withValues(alpha: 0.55),
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 22),

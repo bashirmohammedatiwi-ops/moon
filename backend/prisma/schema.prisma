@@ -438,9 +438,10 @@ model Media {
   brandLogos     Brand[]        @relation("BrandLogo")
   categoryImages Category[]     @relation("CategoryImage")
   shadeImages    ProductShade[] @relation("ShadeImage")
-  banners        Banner[]       @relation("BannerImage")
-  packages       Package[]      @relation("PackageCover")
-  skinConcerns   SkinConcern[]  @relation("SkinConcernImage")
+  banners        Banner[]         @relation("BannerImage")
+  spotlightItems SpotlightItem[]  @relation("SpotlightImage")
+  packages       Package[]        @relation("PackageCover")
+  skinConcerns   SkinConcern[]    @relation("SkinConcernImage")
 
   @@index([purpose])
   @@index([createdAt])
@@ -686,6 +687,34 @@ model Banner {
   updatedAt       DateTime  @updatedAt
 
   image Media? @relation("BannerImage", fields: [imageId], references: [id])
+
+  @@index([isActive])
+  @@index([position])
+}
+
+/// صور دعائية عمودية — تغذية «سبوت لايت» في التطبيق (مثل ريلز).
+model SpotlightItem {
+  id         String    @id @default(uuid())
+  title      String
+  titleEn    String?
+  subtitle   String?
+  subtitleEn String?
+  badge      String?
+  badgeEn    String?
+  ctaLabel   String?
+  ctaLabelEn String?
+  link       String?
+  linkType   String?
+  linkValue  String?
+  imageId    String?
+  position   Int       @default(0)
+  isActive   Boolean   @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  image Media? @relation("SpotlightImage", fields: [imageId], references: [id])
 
   @@index([isActive])
   @@index([position])

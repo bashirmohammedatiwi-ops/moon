@@ -29,10 +29,10 @@ import '../../features/profile/notifications_screen.dart';
 import '../../features/search/qr_scan_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/about_app_screen.dart';
-import '../../features/assistant/assistant_screen.dart';
 import '../../features/settings/language_picker_screen.dart';
 import '../../features/settings/legal_document_screen.dart';
 import '../../features/settings/open_source_licenses_screen.dart';
+import '../../features/offers/offers_screen.dart';
 import '../../features/shell/main_shell.dart';
 import '../../features/wishlist/wishlist_screen.dart';
 
@@ -70,10 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         });
         return '/';
       }
-      if (path == '/offers') {
+      if (path == '/spotlight') {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final container = ProviderScope.containerOf(context);
-          openOffersTab(context, container);
+          openSpotlightTab(context, container);
         });
         return '/';
       }
@@ -87,12 +87,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/assistant',
-        pageBuilder: (_, state) => appPage(
-          child: AssistantScreen(screenProductId: state.extra as String?),
-        ),
-      ),
       GoRoute(path: '/language', pageBuilder: (_, __) => appPage(child: const LanguagePickerScreen())),
       GoRoute(path: '/', builder: (_, __) => const MainShell()),
       GoRoute(path: '/login', pageBuilder: (_, __) => appPage(child: const LoginScreen())),
@@ -100,6 +94,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/search', pageBuilder: (_, __) => appPage(child: const SearchScreen())),
       GoRoute(path: '/scan', pageBuilder: (_, __) => appPage(child: const QrScanScreen())),
       GoRoute(path: '/brands', pageBuilder: (_, __) => appPage(child: const BrandsScreen())),
+      GoRoute(path: '/offers', pageBuilder: (_, __) => appPage(child: const OffersScreen())),
       GoRoute(
         path: '/product/:id',
         pageBuilder: (_, s) =>

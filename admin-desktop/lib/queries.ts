@@ -50,6 +50,7 @@ export const queries = {
     api.get("/orders", { params: { preview: 1, ...params } }).then((r) => r.data),
   order: (id: string) => api.get(`/orders/${id}`).then((r) => r.data?.data ?? r.data),
   banners: () => api.get("/banners").then((r) => r.data?.data ?? r.data),
+  spotlight: () => api.get("/spotlight").then((r) => r.data?.data ?? r.data),
   packages: () =>
     api.get("/packages", { params: { all: 1, lite: 1 } }).then((r) => r.data?.data ?? r.data),
   coupons: () => api.get("/coupons").then((r) => r.data?.data ?? r.data),
@@ -212,6 +213,11 @@ export const mutations = {
   updateBanner: (id: string, data: any) =>
     api.patch(`/banners/${id}`, data).then((r) => r.data?.data ?? r.data),
   deleteBanner: (id: string) => api.delete(`/banners/${id}`).then((r) => r.data),
+
+  createSpotlight: (data: any) => api.post("/spotlight", data).then((r) => r.data?.data ?? r.data),
+  updateSpotlight: (id: string, data: any) =>
+    api.patch(`/spotlight/${id}`, data).then((r) => r.data?.data ?? r.data),
+  deleteSpotlight: (id: string) => api.delete(`/spotlight/${id}`).then((r) => r.data),
 
   createPackage: (data: any) => api.post("/packages", data).then((r) => r.data?.data ?? r.data),
   updatePackage: (id: string, data: any) =>

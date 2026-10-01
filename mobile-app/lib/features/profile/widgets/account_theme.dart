@@ -11,11 +11,11 @@ abstract final class AccountTheme {
 
   static const orders = AppColors.primary;
   static const wishlist = AppColors.primaryDark;
-  static const loyalty = Color(0xFF1AA3B0);
-  static const addresses = Color(0xFF0C7475);
-  static const brands = Color(0xFF48C0D0);
-  static const notifications = AppColors.primary;
-  static const settings = Color(0xFF4F6E74);
+  static const loyalty = AppColors.accent;
+  static const addresses = AppColors.primaryDark;
+  static const brands = AppColors.primary;
+  static const notifications = AppColors.primaryDeep;
+  static const settings = AppColors.textSecondary;
   static const danger = Color(0xFFC04545);
   static const dangerSoft = Color(0xFFFFF0F0);
 

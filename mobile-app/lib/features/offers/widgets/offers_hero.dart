@@ -24,9 +24,25 @@ class OffersHero extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.s;
 
+    final canPop = GoRouter.of(context).canPop();
+
     return Padding(
       padding: EdgeInsets.fromLTRB(OffersTheme.hPad, topPad + 6, OffersTheme.hPad, 10),
-      child: Container(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (canPop)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black.withValues(alpha: 0.22),
+                ),
+              ),
+            ),
+          Container(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
         decoration: OffersTheme.heroDecoration(),
         child: Column(
@@ -98,6 +114,8 @@ class OffersHero extends ConsumerWidget {
             ),
           ],
         ),
+          ),
+        ],
       ),
     );
   }

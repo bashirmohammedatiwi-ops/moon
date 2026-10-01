@@ -22,7 +22,11 @@ void openNotificationLink(BuildContext context, AppNotification notification) {
   }
 
   if (linkType == 'OFFERS' || linkSlug == 'offers') {
-    openOffersTab(context, ProviderScope.containerOf(context, listen: false));
+    context.push('/offers');
+    return;
+  }
+  if (linkType == 'SPOTLIGHT' || linkSlug == 'spotlight') {
+    openSpotlightTab(context, ProviderScope.containerOf(context, listen: false));
     return;
   }
 

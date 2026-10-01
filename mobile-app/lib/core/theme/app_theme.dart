@@ -45,7 +45,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          side: BorderSide(color: AppColors.hairline.withValues(alpha: 0.7)),
+          side: BorderSide(color: AppColors.hairline, width: 1),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -97,8 +97,8 @@ class AppTheme {
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
-        selectedItemColor: AppColors.primaryDark,
-        unselectedItemColor: AppColors.textMuted,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textSecondary,
         type: BottomNavigationBarType.fixed,
         showUnselectedLabels: true,
         elevation: 0,

@@ -56,7 +56,7 @@ abstract final class CartTheme {
   static BoxDecoration cardDecoration({Color? color}) => BoxDecoration(
         color: color ?? card,
         borderRadius: BorderRadius.circular(radiusLg),
-        border: Border.all(color: brandSoft),
+        border: Border.all(color: AppColors.hairline),
         boxShadow: softShadow,
       );
 

@@ -22,6 +22,14 @@ class AppStrings {
   String get navHome => isAr ? 'الرئيسية' : 'Home';
   String get navCategories => isAr ? 'الفئات' : 'Categories';
   String get navOffers => isAr ? 'عروضنا' : 'Offers';
+  String get navSpotlight => isAr ? 'سبوت' : 'Spotlight';
+  String get spotlightTitle => isAr ? 'سبوت لايت' : 'Spotlight';
+  String get spotlightSwipeHint => isAr ? 'اسحبي للأعلى' : 'Swipe up';
+  String get spotlightEmpty => isAr ? 'لا توجد صور دعائية حالياً' : 'No spotlight items yet';
+  String get spotlightDefaultCta => isAr ? 'اكتشفي المزيد' : 'Discover';
+  String get offersPromoTitle => isAr ? 'عروضنا الحصرية' : 'Exclusive offers';
+  String get offersPromoSubtitle =>
+      isAr ? 'خصومات ومنتجات مختارة — اضغطي للدخول' : 'Deals & picks — tap to explore';
   String get navCart => isAr ? 'السلة' : 'Cart';
   String get navAccount => isAr ? 'حسابي' : 'Account';
 

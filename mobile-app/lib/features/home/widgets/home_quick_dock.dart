@@ -17,7 +17,7 @@ class HomeQuickDock extends ConsumerWidget {
     final s = ref.s;
     final items = [
       _Item(0, Icons.local_offer_outlined, s.quickOffers, () {
-        ref.read(navIndexProvider.notifier).state = 2;
+        context.push('/offers');
       }),
       _Item(1, Icons.grid_view_rounded, s.navCategories, () {
         ref.read(navIndexProvider.notifier).state = 1;

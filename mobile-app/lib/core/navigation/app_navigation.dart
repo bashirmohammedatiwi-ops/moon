@@ -18,8 +18,10 @@ void openMainTab(BuildContext context, ProviderContainer container, int index) {
 void openCartTab(BuildContext context, ProviderContainer container) =>
     openMainTab(context, container, 3);
 
-void openOffersTab(BuildContext context, ProviderContainer container) =>
+void openSpotlightTab(BuildContext context, ProviderContainer container) =>
     openMainTab(context, container, 2);
+
+void openOffersPage(BuildContext context) => context.push('/offers');
 
 void openCategoriesTab(BuildContext context, ProviderContainer container) =>
     openMainTab(context, container, 1);
@@ -40,5 +42,13 @@ void openMainTabFromContainer(ProviderContainer container, int index) {
 void openCartFromContainer(ProviderContainer container) =>
     openMainTabFromContainer(container, 3);
 
-void openOffersFromContainer(ProviderContainer container) =>
+void openSpotlightFromContainer(ProviderContainer container) =>
     openMainTabFromContainer(container, 2);
+
+@Deprecated('Use openOffersPage')
+void openOffersTab(BuildContext context, ProviderContainer container) =>
+    openOffersPage(context);
+
+@Deprecated('Use openSpotlightFromContainer')
+void openOffersFromContainer(ProviderContainer container) =>
+    openSpotlightFromContainer(container);

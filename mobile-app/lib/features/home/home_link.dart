@@ -184,7 +184,11 @@ void _pushAppPath(BuildContext context, String rawPath) {
     return;
   }
   if (path == '/offers' || path.startsWith('/offers')) {
-    openOffersTab(context, ProviderScope.containerOf(context, listen: false));
+    context.push('/offers');
+    return;
+  }
+  if (path == '/spotlight') {
+    openSpotlightTab(context, ProviderScope.containerOf(context, listen: false));
     return;
   }
 
@@ -284,7 +288,11 @@ void openSectionLink(
     return;
   }
   if (type == 'offers') {
-    openOffersTab(context, ProviderScope.containerOf(context, listen: false));
+    context.push('/offers');
+    return;
+  }
+  if (type == 'spotlight') {
+    openSpotlightTab(context, ProviderScope.containerOf(context, listen: false));
     return;
   }
   if (type == 'categoriesTab') {

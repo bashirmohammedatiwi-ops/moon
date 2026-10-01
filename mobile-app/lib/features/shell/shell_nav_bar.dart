@@ -33,7 +33,7 @@ class ShellNavBar extends StatelessWidget {
     final items = [
       _NavItemData(0, Icons.home_outlined, Icons.home_rounded, strings.navHome),
       _NavItemData(1, Icons.grid_view_outlined, Icons.grid_view_rounded, strings.navCategories),
-      _NavItemData(2, Icons.local_offer_outlined, Icons.local_offer_rounded, strings.navOffers),
+      _NavItemData(2, Icons.photo_filter_outlined, Icons.photo_filter_rounded, strings.navSpotlight),
       _NavItemData(3, Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, strings.navCart, badge: cartCount),
       _NavItemData(4, Icons.person_outline_rounded, Icons.person_rounded, strings.navAccount),
     ];
@@ -41,17 +41,17 @@ class ShellNavBar extends StatelessWidget {
     return RepaintBoundary(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.96),
+          color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           border: Border(
-            top: BorderSide(color: AppColors.hairline.withValues(alpha: 0.9)),
+            top: BorderSide(color: AppColors.hairline, width: 1.1),
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.12),
-              blurRadius: 28,
-              offset: const Offset(0, -8),
-              spreadRadius: -8,
+              color: AppColors.primary.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
+              spreadRadius: -6,
             ),
           ],
         ),
@@ -113,8 +113,8 @@ class _NavTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final narrow = Responsive.isNarrow(context);
     final iconSize = narrow ? 20.0 : 22.0;
-    final inactiveColor = AppColors.ink.withValues(alpha: 0.36);
-    final activeColor = AppColors.primaryDark;
+    final inactiveColor = AppColors.textMuted;
+    final activeColor = AppColors.primaryDeep;
 
     return Expanded(
       child: Material(
