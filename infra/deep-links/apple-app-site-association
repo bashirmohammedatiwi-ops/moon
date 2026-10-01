@@ -1,0 +1,37 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["629ARMBUX8.com.qamaralzaman.app"],
+        "components": [
+          { "/": "/product/*" },
+          { "/": "/product" },
+          { "/": "/category/*" },
+          { "/": "/category" },
+          { "/": "/brand/*" },
+          { "/": "/brand" },
+          { "/": "/package/*" },
+          { "/": "/package" },
+          { "/": "/products" },
+          { "/": "/products/*" },
+          { "/": "/offers" },
+          { "/": "/offers/*" },
+          { "/": "/categories" },
+          { "/": "/categories/*" },
+          { "/": "/cart" },
+          { "/": "/about" },
+          { "/": "/privacy" },
+          { "/": "/en/privacy" },
+          { "/": "/en/privacy/*" },
+          { "/": "/terms" },
+          { "/": "/en/terms" },
+          { "/": "/en/terms/*" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["629ARMBUX8.com.qamaralzaman.app"]
+  }
+}

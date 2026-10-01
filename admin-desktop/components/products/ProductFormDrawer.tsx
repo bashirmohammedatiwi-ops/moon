@@ -1,0 +1,491 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Button,
+  Divider,
+  Drawer,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Space,
+  Switch,
+  type FormInstance,
+} from "antd";
+import type { ImageItem } from "@/components/ProductImageDropzone";
+import { ProductShadesEditor } from "@/components/ProductShadesEditor";
+import { WizardTabs, type WizardTabItem } from "@/components/WizardTabs";
+import { useFormWizard } from "@/hooks/useFormWizard";
+import { normalizeBarcode } from "@/lib/barcode";
+import { displayProductName, productNameValidator } from "@/lib/productName";
+import { queries } from "@/lib/queries";
+
+const ProductImageDropzone = dynamic(
+  () => import("@/components/ProductImageDropzone").then((m) => ({ default: m.ProductImageDropzone })),
+  { ssr: false, loading: () => <div className="alhayaa-skeleton-block" /> },
+);
+
+const SKIN_TYPES = [
+  { value: "جافة", label: "جافة" },
+  { value: "دهنية", label: "دهنية" },
+  { value: "مختلطة", label: "مختلطة" },
+  { value: "حساسة", label: "حساسة" },
+  { value: "عادية", label: "عادية" },
+];
+
+export const PRODUCT_WIZARD_TABS: WizardTabItem[] = [
+  { key: "basic", label: "أساسي" },
+  { key: "pricing", label: "السعر" },
+  { key: "content", label: "الوصف" },
+  { key: "images", label: "الصور" },
+  { key: "shades", label: "الألوان" },
+  { key: "variants", label: "المقاسات" },
+  { key: "flags", label: "الإعدادات" },
+];
+
+const TAB_KEYS = PRODUCT_WIZARD_TABS.map((t) => t.key);
+
+function TabPanel({
+  tabKey,
+  activeTab,
+  children,
+  className = "",
+}: {
+  tabKey: string;
+  activeTab: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const visible = tabKey === activeTab;
+  return (
+    <div
+      className={`alhayaa-form-section ${className}`.trim()}
+      hidden={!visible}
+      aria-hidden={!visible}
+    >
+      {children}
+    </div>
+  );
+}
+
+type ProductFormDrawerProps = {
+  open: boolean;
+  editing: { id?: string; name?: string } | null;
+  activeTab: string;
+  setActiveTab: (key: string) => void;
+  form: FormInstance;
+  saving: boolean;
+  productImages: ImageItem[];
+  setProductImages: (items: ImageItem[]) => void;
+  shadePreviews: Record<number, ImageItem | null>;
+  setShadePreviews: React.Dispatch<React.SetStateAction<Record<number, ImageItem | null>>>;
+  categoriesData: any[];
+  brandsData: any[];
+  skinConcernsData?: any[];
+  subcategoryOptions: { value: string; label: string }[];
+  tertiaryCategoryOptions?: { label: string; options: { value: string; label: string }[] }[];
+  hasSyncData?: boolean;
+  syncLoading?: boolean;
+  syncMeta?: { offerName?: string; syncedAt?: string } | null;
+  onBarcodeLookup?: (barcode: string) => void;
+  onShadeBarcodeLookup?: (shadeIndex: number, barcode: string) => void;
+  shadeSyncLoading?: Record<number, boolean>;
+  onClose: () => void;
+  onSubmit: (values: any) => void;
+};
+
+export function ProductFormDrawer({
+  open,
+  editing,
+  activeTab,
+  setActiveTab,
+  form,
+  saving,
+  productImages,
+  setProductImages,
+  shadePreviews,
+  setShadePreviews,
+  categoriesData,
+  brandsData,
+  skinConcernsData = [],
+  subcategoryOptions,
+  tertiaryCategoryOptions = [],
+  hasSyncData = false,
+  syncLoading = false,
+  syncMeta = null,
+  onBarcodeLookup,
+  onShadeBarcodeLookup,
+  shadeSyncLoading,
+  onClose,
+  onSubmit,
+}: ProductFormDrawerProps) {
+  useFormWizard(TAB_KEYS, activeTab, setActiveTab, {
+    enabled: open,
+    onSave: () => form.submit(),
+    onClose,
+  });
+
+  // فحص فوري: هل الباركود مستخدم في منتج موجود مسبقاً؟
+  const barcodeValue = Form.useWatch("barcode", form);
+  const [duplicate, setDuplicate] = useState<{
+    product: any;
+    matchedShadeName: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setDuplicate(null);
+      return;
+    }
+    const code = normalizeBarcode(barcodeValue) || String(barcodeValue ?? "").trim();
+    if (!code) {
+      setDuplicate(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await queries.productBarcodeCheck(code);
+        if (cancelled) return;
+        if (res?.exists && res.product?.id && res.product.id !== editing?.id) {
+          setDuplicate({ product: res.product, matchedShadeName: res.matchedShadeName ?? null });
+        } else {
+          setDuplicate(null);
+        }
+      } catch {
+        if (!cancelled) setDuplicate(null);
+      }
+    }, 450);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [open, barcodeValue, editing?.id]);
+
+  const tabsWithCounts = PRODUCT_WIZARD_TABS.map((t) =>
+    t.key === "images" ? { ...t, label: `الصور (${productImages.length})` } : t,
+  );
+
+  return (
+    <Drawer
+      title={
+        <div className="alhayaa-drawer-title">
+          <span>{editing?.id ? "تعديل منتج" : "منتج جديد"}</span>
+          {editing ? <small>{displayProductName(editing)}</small> : null}
+        </div>
+      }
+      open={open}
+      onClose={onClose}
+      width={920}
+      destroyOnHidden
+      className="alhayaa-product-drawer"
+      extra={
+        <Space>
+          <Button onClick={onClose}>إلغاء</Button>
+          <Button type="primary" loading={saving} onClick={() => form.submit()}>
+            حفظ المنتج
+          </Button>
+        </Space>
+      }
+    >
+      <WizardTabs tabs={tabsWithCounts} activeKey={activeTab} onChange={setActiveTab} />
+
+      <Form
+        layout="vertical"
+        form={form}
+        onFinish={onSubmit}
+        className="alhayaa-product-form"
+        onFinishFailed={(info) => {
+          const field = String(info.errorFields[0]?.name?.[0] ?? "");
+          if (["nameAr", "nameEn", "sku", "slug", "brandId", "categoryId", "subcategoryIds", "tertiaryCategoryIds", "tags", "skinType"].includes(field)) {
+            setActiveTab("basic");
+          } else if (["price", "stock", "originalPrice", "discountPercent", "pointsEarned", "rating"].includes(field)) {
+            setActiveTab("pricing");
+          }
+        }}
+      >
+        <TabPanel tabKey="basic" activeTab={activeTab}>
+            <div className="alhayaa-form-row">
+              <Form.Item
+                name="nameAr"
+                label="اسم المنتج (عربي)"
+                className="alhayaa-form-col"
+                rules={[productNameValidator(() => form.getFieldValue("nameEn"))]}
+              >
+                <Input placeholder="كريم مرطب فاخر" autoFocus />
+              </Form.Item>
+              <Form.Item
+                name="nameEn"
+                label="اسم المنتج (إنجليزي)"
+                className="alhayaa-form-col alhayaa-ltr-input"
+                rules={[productNameValidator(() => form.getFieldValue("nameAr"))]}
+              >
+                <Input placeholder="Luxury Moisturizing Cream" />
+              </Form.Item>
+            </div>
+            <p className="alhayaa-empty-hint">يمكنك إدخال الاسم بلغة واحدة فقط أو باللغتين معاً.</p>
+            <div className="alhayaa-form-row">
+              <Form.Item name="sku" label="SKU" className="alhayaa-form-col">
+                <Input placeholder="AV_018_2025" className="alhayaa-ltr-input" />
+              </Form.Item>
+              <Form.Item name="slug" label="Slug" className="alhayaa-form-col">
+                <Input placeholder="يُولَّد من الاسم" />
+              </Form.Item>
+            </div>
+            <Form.Item name="barcode" label="الباركود">
+              <Input.Search
+                className="alhayaa-ltr-input"
+                placeholder="AV_018_2025 أو 6281000123456"
+                loading={syncLoading}
+                enterButton="جلب"
+                onSearch={(v) => onBarcodeLookup?.(v)}
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  if (v) onBarcodeLookup?.(v);
+                }}
+              />
+            </Form.Item>
+            {duplicate && (
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginTop: -12, marginBottom: 16 }}
+                message={<strong>هذا المنتج موجود مسبقاً في المتجر!</strong>}
+                description={
+                  <>
+                    الباركود مستخدم في المنتج: <strong>{displayProductName(duplicate.product)}</strong>
+                    {duplicate.matchedShadeName ? ` — درجة: ${duplicate.matchedShadeName}` : ""}
+                    {duplicate.product?.sku ? ` — SKU: ${duplicate.product.sku}` : ""}
+                    {duplicate.product?.isActive === false ? " (غير نشط)" : ""}
+                  </>
+                }
+              />
+            )}
+            <Form.Item name="brandId" label="البراند" rules={[{ required: true }]}>
+              <Select
+                showSearch
+                optionFilterProp="label"
+                placeholder="اختر البراند"
+                options={(brandsData ?? []).map((b: any) => ({ value: b.id, label: b.name }))}
+              />
+            </Form.Item>
+            <Form.Item name="categoryId" label="القسم">
+              <Select
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                placeholder="بدون تصنيف (اختياري)"
+                options={(categoriesData ?? []).map((c: any) => ({ value: c.id, label: c.name }))}
+                onChange={() => {
+                  form.setFieldValue("subcategoryIds", []);
+                  form.setFieldValue("tertiaryCategoryIds", []);
+                }}
+              />
+            </Form.Item>
+            {subcategoryOptions.length > 0 && (
+              <Form.Item
+                name="subcategoryIds"
+                label="الأقسام الفرعية (يمكن اختيار أكثر من قسم)"
+              >
+                <Select
+                  mode="multiple"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="اختر قسماً فرعياً أو أكثر (اختياري)"
+                  options={subcategoryOptions}
+                  maxTagCount="responsive"
+                />
+              </Form.Item>
+            )}
+            {tertiaryCategoryOptions.length > 0 && (
+              <Form.Item
+                name="tertiaryCategoryIds"
+                label="الأقسام الثانوية (يمكن اختيار أكثر من قسم)"
+              >
+                <Select
+                  mode="multiple"
+                  allowClear
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="اختر قسماً ثانوياً أو أكثر (اختياري)"
+                  options={tertiaryCategoryOptions}
+                  maxTagCount="responsive"
+                />
+              </Form.Item>
+            )}
+            <Form.Item name="tags" label="الوسوم (مفصولة بفاصلة)">
+              <Input placeholder="شفاه, مات, فاخر" />
+            </Form.Item>
+            <Form.Item name="skinType" label="نوع البشرة المناسب">
+              <Select mode="multiple" options={SKIN_TYPES} placeholder="اختر..." />
+            </Form.Item>
+            <Form.Item name="concernIds" label="مشاكل البشرة (دليل البشرة)">
+              <Select
+                mode="multiple"
+                placeholder="حب شباب، تصبغات..."
+                options={(skinConcernsData ?? []).map((c: any) => ({
+                  value: c.id,
+                  label: c.name,
+                }))}
+              />
+            </Form.Item>
+        </TabPanel>
+
+        <TabPanel tabKey="pricing" activeTab={activeTab}>
+            <div className="alhayaa-sync-banner">
+              السعر والكمية تُحدَّث تلقائياً من POS — لا يمكن تعديلها يدوياً
+              {syncMeta?.syncedAt
+                ? ` — آخر مزامنة: ${new Date(syncMeta.syncedAt).toLocaleString("ar-IQ")}`
+                : ""}
+              {syncMeta?.offerName ? ` — عرض: ${syncMeta.offerName}` : ""}
+              {!hasSyncData ? " — أدخل باركود وشغّل POS Sync" : ""}
+            </div>
+            <div className="alhayaa-form-row">
+              <Form.Item
+                name="price"
+                label="السعر (د.ع)"
+                className="alhayaa-form-col"
+                rules={[{ required: true }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} disabled readOnly />
+              </Form.Item>
+              <Form.Item name="originalPrice" label="السعر الأصلي" className="alhayaa-form-col">
+                <InputNumber style={{ width: "100%" }} min={0} disabled readOnly />
+              </Form.Item>
+            </div>
+            <div className="alhayaa-form-row">
+              <Form.Item name="discountPercent" label="نسبة الخصم %" className="alhayaa-form-col">
+                <InputNumber style={{ width: "100%" }} min={0} max={100} disabled readOnly />
+              </Form.Item>
+              <Form.Item
+                name="stock"
+                label="المخزون"
+                className="alhayaa-form-col"
+                rules={[{ required: true }]}
+              >
+                <InputNumber style={{ width: "100%" }} min={0} disabled readOnly />
+              </Form.Item>
+            </div>
+            <div className="alhayaa-form-row">
+              <Form.Item name="pointsEarned" label="نقاط الولاء" className="alhayaa-form-col">
+                <InputNumber style={{ width: "100%" }} min={0} />
+              </Form.Item>
+              <Form.Item name="rating" label="التقييم" className="alhayaa-form-col">
+                <InputNumber style={{ width: "100%" }} min={0} max={5} step={0.1} />
+              </Form.Item>
+            </div>
+        </TabPanel>
+
+        <TabPanel tabKey="content" activeTab={activeTab}>
+            <Form.Item name="descriptionAr" label="وصف المنتج (عربي)">
+              <Input.TextArea rows={5} placeholder="وصف تفصيلي بالعربية..." />
+            </Form.Item>
+            <Form.Item name="descriptionEn" label="وصف المنتج (إنجليزي)" className="alhayaa-ltr-input">
+              <Input.TextArea rows={5} placeholder="Detailed product description in English..." />
+            </Form.Item>
+            <p className="alhayaa-empty-hint">يمكنك إدخال الوصف بلغة واحدة أو باللغتين إن وُجدتا.</p>
+            <Form.Item name="ingredients" label="المكونات / المواد">
+              <Input.TextArea rows={4} placeholder="Aqua, Glycerin, Niacinamide..." />
+            </Form.Item>
+            <Form.Item name="howToUse" label="طريقة الاستخدام">
+              <Input.TextArea rows={4} placeholder="1. نظّفي البشرة..." />
+            </Form.Item>
+        </TabPanel>
+
+        <TabPanel tabKey="images" activeTab={activeTab}>
+            <ProductImageDropzone
+              items={productImages}
+              onChange={setProductImages}
+              purpose="PRODUCT"
+              max={12}
+            />
+        </TabPanel>
+
+        <TabPanel tabKey="shades" activeTab={activeTab}>
+            <Form.List name="shades">
+              {(fields, { add, remove }) => (
+                <ProductShadesEditor
+                  fields={fields}
+                  add={add}
+                  remove={remove}
+                  form={form}
+                  shadePreviews={shadePreviews}
+                  setShadePreviews={setShadePreviews}
+                  onShadeBarcodeLookup={onShadeBarcodeLookup}
+                  shadeSyncLoading={shadeSyncLoading}
+                />
+              )}
+            </Form.List>
+        </TabPanel>
+
+        <TabPanel tabKey="variants" activeTab={activeTab}>
+            <Form.List name="variants">
+              {(fields, { add, remove: rm }) => (
+                <div className="alhayaa-variants-list">
+                  <div className="alhayaa-variants-head">
+                    <strong>المقاسات / المتغيرات</strong>
+                    <Button size="small" type="dashed" onClick={() => add()}>
+                      + متغير
+                    </Button>
+                  </div>
+                  {fields.length === 0 && (
+                    <p className="alhayaa-empty-hint">لا توجد متغيرات — أضف مقاساً أو حجمًا مختلفاً</p>
+                  )}
+                  {fields.map((f) => (
+                    <div key={f.key} className="alhayaa-variant-row">
+                      <Form.Item
+                        {...f}
+                        name={[f.name, "label"]}
+                        label="التسمية"
+                        rules={[{ required: true }]}
+                      >
+                        <Input placeholder="30ml" />
+                      </Form.Item>
+                      <Form.Item {...f} name={[f.name, "sizeLabel"]} label="المقاس">
+                        <Input placeholder="30 مل" />
+                      </Form.Item>
+                      <Form.Item {...f} name={[f.name, "priceDelta"]} label="فرق السعر">
+                        <InputNumber placeholder="0" />
+                      </Form.Item>
+                      <Form.Item {...f} name={[f.name, "stock"]} label="مخزون">
+                        <InputNumber min={0} placeholder="0" />
+                      </Form.Item>
+                      <Button danger type="text" onClick={() => rm(f.name)}>
+                        حذف
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Form.List>
+        </TabPanel>
+
+        <TabPanel tabKey="flags" activeTab={activeTab} className="alhayaa-flags-grid">
+            <Form.Item name="isFeatured" label="منتج مميز" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="isNew" label="منتج جديد" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="isBestSeller" label="الأكثر مبيعاً" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="isPromo" label="عرض ترويجي" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Form.Item name="isBogo" label="BOGO" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+            <Divider className="alhayaa-flags-divider" />
+            <Form.Item name="isActive" label="نشط ومتاح للبيع" valuePropName="checked">
+              <Switch />
+            </Form.Item>
+        </TabPanel>
+      </Form>
+    </Drawer>
+  );
+}

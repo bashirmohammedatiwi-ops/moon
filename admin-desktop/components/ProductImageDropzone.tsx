@@ -1,0 +1,361 @@
+"use client";
+import { Spin, message } from "antd";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { mediaPreviewUrl, mediaThumb } from "@/lib/mediaUrl";
+import { uploadMediaFile } from "@/lib/uploadMedia";
+
+export type ImageItem = { id: string; url: string | null };
+
+type Props = {
+  items: ImageItem[];
+  onChange: (items: ImageItem[]) => void;
+  purpose?: string;
+  max?: number;
+  compact?: boolean;
+  label?: string;
+};
+
+const IMAGE_EXT = /\.(png|jpe?g|webp|avif|heic|heif|gif|bmp)$/i;
+const ACCEPT =
+  "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/gif,.jpg,.jpeg,.png,.webp,.avif,.heic,.heif";
+
+function isImageFile(f: File) {
+  if (f.type.startsWith("image/")) return true;
+  if (!f.type && IMAGE_EXT.test(f.name)) return true; // iOS sometimes sends empty MIME
+  return IMAGE_EXT.test(f.name);
+}
+
+async function uploadOne(file: File, purpose: string): Promise<ImageItem> {
+  const media = await uploadMediaFile(file, purpose);
+  return {
+    id: media.id,
+    url: media.previewUrl ?? mediaPreviewUrl(media) ?? mediaThumb(media, "medium"),
+  };
+}
+
+function PreviewImg({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed || !src) {
+    return <div className="ci-img-ph" aria-hidden />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
+    />
+  );
+}
+
+export function ProductImageDropzone({
+  items,
+  onChange,
+  purpose = "PRODUCT",
+  max = 12,
+  compact = false,
+  label,
+}: Props) {
+  const [uploading, setUploading] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+  const zoneRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const uploadFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const list = Array.from(files).filter(isImageFile);
+      if (!list.length) {
+        message.warning("يرجى اختيار صور (JPG / PNG / WebP / AVIF / HEIC)");
+        return;
+      }
+      const remaining = max - items.length;
+      if (remaining <= 0) {
+        message.warning(`الحد الأقصى ${max} صور`);
+        return;
+      }
+      const batch = list.slice(0, remaining);
+      setUploading(batch.length);
+      const results = await Promise.allSettled(batch.map((file) => uploadOne(file, purpose)));
+      const added: ImageItem[] = [];
+      results.forEach((result, i) => {
+        if (result.status === "fulfilled") added.push(result.value);
+        else {
+          const reason =
+            result.reason instanceof Error ? result.reason.message : "خطأ غير معروف";
+          message.error(`فشل رفع: ${batch[i]?.name ?? "صورة"} — ${reason}`);
+        }
+      });
+      setUploading(0);
+      if (added.length) {
+        const merged = [...items];
+        const existingIds = new Set(items.map((i) => i.id));
+        let skipped = 0;
+        for (const item of added) {
+          if (existingIds.has(item.id)) {
+            skipped += 1;
+            continue;
+          }
+          existingIds.add(item.id);
+          merged.push(item);
+        }
+        onChange(merged);
+        if (skipped > 0) {
+          message.info(`تم تخطي ${skipped} صورة مكررة`);
+        }
+        const uploaded = added.length - skipped;
+        if (uploaded > 0) {
+          message.success(`تم رفع ${uploaded} صورة`);
+        }
+      }
+    },
+    [items, onChange, max, purpose],
+  );
+
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const zone = zoneRef.current;
+      if (!zone) return;
+      const active = document.activeElement;
+      const inForm =
+        active instanceof HTMLElement &&
+        (zone.contains(active) ||
+          active.tagName === "BODY" ||
+          active.closest(".ant-modal, .ant-drawer"));
+      if (!inForm) return;
+      const files = e.clipboardData?.files;
+      if (files?.length) {
+        e.preventDefault();
+        uploadFiles(files);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [uploadFiles]);
+
+  function remove(id: string) {
+    onChange(items.filter((i) => i.id !== id));
+  }
+
+  function move(from: number, to: number) {
+    if (to < 0 || to >= items.length) return;
+    const next = [...items];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange(next);
+  }
+
+  const zoneHeight = compact ? 72 : 140;
+
+  return (
+    <div ref={zoneRef}>
+      {label && (
+        <div style={{ fontSize: 13, marginBottom: 6, color: "#444" }}>{label}</div>
+      )}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (e.dataTransfer.files?.length) uploadFiles(e.dataTransfer.files);
+        }}
+        style={{
+          border: `2px dashed ${dragOver ? "#1677ff" : "#d9d9d9"}`,
+          borderRadius: 10,
+          padding: compact ? 10 : 16,
+          textAlign: "center",
+          background: dragOver ? "#f0f7ff" : "#fafafa",
+          cursor: "pointer",
+          minHeight: zoneHeight,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          hidden
+          onChange={(e) => {
+            if (e.target.files) uploadFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        {uploading > 0 ? (
+          <Spin size="small" tip={`جاري رفع ${uploading}...`} />
+        ) : (
+          <>
+            <div style={{ fontSize: compact ? 20 : 28 }}>📷</div>
+            {!compact && (
+              <>
+                <div style={{ fontWeight: 500 }}>اسحب الصور هنا أو انقر للاختيار</div>
+                <div style={{ fontSize: 12, color: "#888" }}>
+                  JPG · PNG · WebP · AVIF · HEIC — أو الصق من الحافظة (Ctrl+V)
+                </div>
+              </>
+            )}
+            {compact && (
+              <div style={{ fontSize: 11, color: "#888" }}>سحب / لصق / اختيار</div>
+            )}
+          </>
+        )}
+      </div>
+
+      {items.length > 0 && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: compact
+              ? "repeat(auto-fill, minmax(56px, 1fr))"
+              : "repeat(auto-fill, minmax(100px, 1fr))",
+            gap: 8,
+            marginTop: 10,
+          }}
+        >
+          {items.map((item, idx) => (
+            <div key={item.id} style={{ position: "relative" }}>
+              <div
+                style={{
+                  height: compact ? 56 : 100,
+                  borderRadius: 8,
+                  border: idx === 0 ? "2px solid #1677ff" : "1px solid #eee",
+                  overflow: "hidden",
+                  background: "linear-gradient(135deg, #f0f0f5, #e8e8ee)",
+                }}
+              >
+                {item.url ? <PreviewImg src={item.url} alt={`صورة ${idx + 1}`} /> : null}
+              </div>
+              {idx === 0 && !compact && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    insetInlineStart: 4,
+                    fontSize: 10,
+                    background: "#1677ff",
+                    color: "#fff",
+                    padding: "1px 6px",
+                    borderRadius: 4,
+                  }}
+                >
+                  رئيسية
+                </span>
+              )}
+              {!compact && items.length > 1 ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 4,
+                    insetInlineStart: 4,
+                    display: "flex",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(idx, idx - 1);
+                    }}
+                    disabled={idx === 0}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      border: "none",
+                      borderRadius: 4,
+                      background: "rgba(0,0,0,0.5)",
+                      color: "#fff",
+                      cursor: idx === 0 ? "default" : "pointer",
+                      opacity: idx === 0 ? 0.4 : 1,
+                      fontSize: 11,
+                    }}
+                    aria-label="تحريك لليسار"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(idx, idx + 1);
+                    }}
+                    disabled={idx === items.length - 1}
+                    style={{
+                      width: 22,
+                      height: 22,
+                      border: "none",
+                      borderRadius: 4,
+                      background: "rgba(0,0,0,0.5)",
+                      color: "#fff",
+                      cursor: idx === items.length - 1 ? "default" : "pointer",
+                      opacity: idx === items.length - 1 ? 0.4 : 1,
+                      fontSize: 11,
+                    }}
+                    aria-label="تحريك لليمين"
+                  >
+                    ›
+                  </button>
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  remove(item.id);
+                }}
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  insetInlineEnd: 4,
+                  width: 22,
+                  height: 22,
+                  border: "none",
+                  borderRadius: "50%",
+                  background: "rgba(0,0,0,0.55)",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  lineHeight: 1,
+                }}
+                aria-label="حذف"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function shadeSwatchStyle(colorHex?: string, colorHexEnd?: string | null) {
+  if (!colorHex) return { background: "#eee" };
+  if (colorHexEnd) {
+    return { background: `linear-gradient(135deg, ${colorHex}, ${colorHexEnd})` };
+  }
+  return { background: colorHex };
+}

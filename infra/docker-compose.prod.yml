@@ -1,0 +1,163 @@
+# قمر الزمان — production stack (IP mode, port 3200+)
+# Isolated from ديما الحياة on the same VPS via COMPOSE_PROJECT_NAME=qamar
+name: qamar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-qamar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-qamar}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-qamar} -d ${POSTGRES_DB:-qamar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-qamar}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-qamar}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-900}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-2592000}
+      MEDIA_ROOT: /data/uploads
+      MEDIA_PUBLIC_PREFIX: /media
+      MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL:-http://187.127.88.146:3200/media}
+      MEDIA_MAX_FILE_SIZE_MB: ${MEDIA_MAX_FILE_SIZE_MB:-15}
+      MEDIA_MAX_ORIGINAL_WIDTH: ${MEDIA_MAX_ORIGINAL_WIDTH:-2400}
+      MEDIA_WEBP_QUALITY: ${MEDIA_WEBP_QUALITY:-90}
+      MEDIA_JPEG_QUALITY: ${MEDIA_JPEG_QUALITY:-90}
+      MEDIA_AVIF_QUALITY: ${MEDIA_AVIF_QUALITY:-62}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      HOME_FEED_CACHE_TTL_SEC: ${HOME_FEED_CACHE_TTL_SEC:-90}
+      DISK_WARN_PERCENT: ${DISK_WARN_PERCENT:-85}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@qamar.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+      RUN_SEED: ${RUN_SEED:-0}
+      SEED_DEMO: ${SEED_DEMO:-0}
+      ENABLE_HSTS: 0
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
+      GOOGLE_TRANSLATE_API_KEY: ${GOOGLE_TRANSLATE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5.4-nano}
+      GOOGLE_CSE_API_KEY: ${GOOGLE_CSE_API_KEY:-}
+      GOOGLE_CSE_CX: ${GOOGLE_CSE_CX:-}
+    volumes:
+      - mediadata:/data/uploads
+    expose:
+      - "3000"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
+  catalog-hub:
+    build:
+      context: ../catalog-hub
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 10000
+      HOST: 0.0.0.0
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      CATALOG_HUB_PUBLIC_PREFIX: /catalog-hub
+      AMAZON_ACCESS_KEY: ""
+      AMAZON_SECRET_KEY: ""
+      AMAZON_PARTNER_TAG: ""
+      AMAZON_MARKETPLACE: ${AMAZON_MARKETPLACE:-www.amazon.com}
+      AMAZON_MARKETPLACE_AR: ${AMAZON_MARKETPLACE_AR:-www.amazon.ae}
+      AMAZON_PARTNER_TAG_AR: ""
+      # معطّل — لا زحف ولا بوتات مشتركة مع التطبيق الأساسي على نفس السيرفر
+      AMAZON_AUTO_CRAWL: "0"
+      AMAZON_CRAWL_DELAY_MS: ${AMAZON_CRAWL_DELAY_MS:-2200}
+    expose:
+      - "10000"
+    volumes:
+      - cataloghubdata:/app/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:10000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+      catalog-hub:
+        condition: service_started
+    ports:
+      # HTTP فقط على 3200 — بدون 80/443 حتى لا يتعارض مع ديما الحياة
+      - "3200:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - mediadata:/var/www/qamar/uploads:ro
+      - ./admin-static:/var/www/qamar/admin:ro
+      - ./store-static:/var/www/qamar/store:ro
+      - ./deep-links:/var/www/qamar/deep-links:ro
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  redisdata:
+  mediadata:
+  cataloghubdata:
+
+networks:
+  internal:
+    driver: bridge

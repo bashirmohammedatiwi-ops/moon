@@ -1,0 +1,258 @@
+"use client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Button,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  message,
+} from "antd";
+import { useState } from "react";
+import { BannerExtraFields } from "@/components/home-builder/SectionPayloadEditor";
+import { mediaThumb } from "@/lib/mediaUrl";
+import { mutations, queries } from "@/lib/queries";
+
+function toFormValues(row: any) {
+  if (!row) return { isActive: true, position: 0 };
+  return {
+    title: row.title,
+    titleEn: row.titleEn,
+    subtitle: row.subtitle,
+    subtitleEn: row.subtitleEn,
+    tag: row.tag,
+    tagEn: row.tagEn,
+    ctaLabel: row.ctaLabel,
+    ctaLabelEn: row.ctaLabelEn,
+    link: row.link ?? row.ctaUrl ?? "",
+    linkType: row.linkType,
+    linkValue: row.linkValue,
+    discountText: row.discountText,
+    backgroundColor: row.backgroundColor,
+    imageId: row.imageId ?? row.image?.id,
+    position: row.position,
+    isActive: row.isActive,
+    startsAt: row.startsAt,
+    endsAt: row.endsAt,
+  };
+}
+
+function toPayload(values: any) {
+  return {
+    title: values.title,
+    titleEn: values.titleEn,
+    subtitle: values.subtitle,
+    subtitleEn: values.subtitleEn,
+    tag: values.tag,
+    tagEn: values.tagEn,
+    ctaLabel: values.ctaLabel,
+    ctaLabelEn: values.ctaLabelEn,
+    link: values.link ?? values.ctaUrl ?? undefined,
+    linkType: values.linkType ?? undefined,
+    linkValue: values.linkValue ?? undefined,
+    discountText: values.discountText ?? undefined,
+    discountTextEn: values.discountTextEn ?? undefined,
+    backgroundColor: values.backgroundColor ?? undefined,
+    imageId: values.imageId ?? undefined,
+    position: values.position,
+    isActive: values.isActive,
+    startsAt: values.startsAt,
+    endsAt: values.endsAt,
+  };
+}
+
+export default function BannersPage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["banners"],
+    queryFn: queries.banners,
+  });
+  const { data: categories } = useQuery({ queryKey: ["categories"], queryFn: queries.categoriesFull });
+  const { data: subcategories } = useQuery({ queryKey: ["subcategories-all"], queryFn: () => queries.subcategories() });
+  const { data: tertiary } = useQuery({ queryKey: ["tertiary-all"], queryFn: () => queries.tertiarySections() });
+  const { data: brands } = useQuery({ queryKey: ["brands"], queryFn: () => queries.brands() });
+  const { data: products } = useQuery({
+    queryKey: ["products-lite-banners"],
+    queryFn: () => queries.products({ limit: 200 }),
+  });
+  const bannerEntities = {
+    categories: categories ?? [],
+    subcategories: subcategories ?? [],
+    tertiary: tertiary ?? [],
+    brands: brands ?? [],
+    products: products?.data ?? [],
+  };
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [form] = Form.useForm();
+
+  const upsert = useMutation({
+    mutationFn: async (values: any) => {
+      const payload = toPayload(values);
+      return editing?.id
+        ? mutations.updateBanner(editing.id, payload)
+        : mutations.createBanner(payload);
+    },
+    onSuccess: () => {
+      message.success(editing ? "تم التحديث" : "تم الإنشاء");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["banners"] });
+    },
+    onError: () => message.error("تعذر حفظ البنر"),
+  });
+
+  const remove = useMutation({
+    mutationFn: mutations.deleteBanner,
+    onSuccess: () => {
+      message.success("تم الحذف");
+      qc.invalidateQueries({ queryKey: ["banners"] });
+    },
+  });
+
+  return (
+     <>
+      <Space direction="vertical" size={12} style={{ width: "100%" }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <h2 style={{ margin: 0 }}>البنرات الترويجية</h2>
+          <Button
+            type="primary"
+            onClick={() => {
+              setEditing(null);
+              form.resetFields();
+              form.setFieldsValue({ isActive: true, position: 0 });
+              setOpen(true);
+            }}
+          >
+            + بنر جديد
+          </Button>
+        </div>
+        <Card styles={{ body: { padding: 0 } }}>
+          <Table
+            rowKey="id"
+            loading={isLoading}
+            dataSource={data ?? []}
+            columns={[
+              {
+                title: "الصورة",
+                width: 80,
+                render: (_: any, r: any) => {
+                  const url = mediaThumb(r.image);
+                  return (
+                    <div
+                      style={{
+                        width: 56,
+                        height: 40,
+                        borderRadius: 6,
+                        background: url
+                          ? `center/cover url(${url})`
+                          : "#f0f0f5",
+                      }}
+                    />
+                  );
+                },
+              },
+              { title: "العنوان", dataIndex: "title" },
+              { title: "العنوان الفرعي", dataIndex: "subtitle" },
+              {
+                title: "الرابط",
+                render: (_: any, r: any) => r.link ?? r.ctaUrl ?? "—",
+              },
+              { title: "الترتيب", dataIndex: "position", width: 90 },
+              {
+                title: "الحالة",
+                dataIndex: "isActive",
+                render: (v) => (
+                  <Tag color={v ? "green" : "red"}>{v ? "نشط" : "مخفي"}</Tag>
+                ),
+              },
+              {
+                title: "إجراءات",
+                width: 180,
+                render: (_: any, r: any) => (
+                  <Space>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setEditing(r);
+                        form.setFieldsValue(toFormValues(r));
+                        setOpen(true);
+                      }}
+                    >
+                      تعديل
+                    </Button>
+                    <Popconfirm
+                      title="حذف البنر؟"
+                      okText="حذف"
+                      cancelText="إلغاء"
+                      onConfirm={() => remove.mutate(r.id)}
+                    >
+                      <Button danger size="small">
+                        حذف
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                ),
+              },
+            ]}
+          />
+        </Card>
+      </Space>
+
+      <Modal
+        title={editing ? "تعديل البنر" : "بنر جديد"}
+        open={open}
+        onCancel={() => setOpen(false)}
+        onOk={() => form.submit()}
+        confirmLoading={upsert.isPending}
+        okText="حفظ"
+        cancelText="إلغاء"
+        destroyOnHidden
+        width={520}
+      >
+        <Form layout="vertical" form={form} onFinish={(v) => upsert.mutate(v)}>
+          <Form.Item name="title" label="العنوان (عربي)" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="titleEn" label="العنوان (إنجليزي)">
+            <Input />
+          </Form.Item>
+          <Form.Item name="subtitle" label="العنوان الفرعي (عربي)">
+            <Input />
+          </Form.Item>
+          <Form.Item name="subtitleEn" label="العنوان الفرعي (إنجليزي)">
+            <Input />
+          </Form.Item>
+          <Form.Item name="tag" label="وسم (عربي)">
+            <Input placeholder="جديد / خصم 30%" />
+          </Form.Item>
+          <Form.Item name="tagEn" label="وسم (إنجليزي)">
+            <Input placeholder="New / 30% off" />
+          </Form.Item>
+          <Form.Item name="ctaLabel" label="نص الزر (عربي)">
+            <Input placeholder="تسوق الآن" />
+          </Form.Item>
+          <Form.Item name="ctaLabelEn" label="نص الزر (إنجليزي)">
+            <Input placeholder="Shop now" />
+          </Form.Item>
+          <Form.Item name="link" label="رابط الزر">
+            <Input placeholder="/products?sale=1" />
+          </Form.Item>
+          <BannerExtraFields entities={bannerEntities} />
+          <Form.Item name="position" label="الترتيب">
+            <InputNumber style={{ width: "100%" }} min={0} />
+          </Form.Item>
+          <Form.Item name="isActive" label="نشط" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+        </Form>
+      </Modal>
+    
+    </>
+  );
+}

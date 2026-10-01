@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../l10n/app_strings.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import 'brand_art.dart';
+import '../utils/friendly_error.dart';
+
+class EmptyState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? action;
+  /// عرض زخرفة الهوية بدل الأيقونة الدائرية (حالات الفراغ الودية).
+  final bool butterfly;
+  /// اختصار بدل [action]: نص زر + معالج.
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  const EmptyState({
+    super.key,
+    this.icon = Icons.inbox_outlined,
+    required this.title,
+    this.subtitle,
+    this.action,
+    this.actionLabel,
+    this.onAction,
+    this.butterfly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (butterfly)
+              const ButterflyArt(size: 110)
+            else
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, size: 44, color: AppColors.primary),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(title, textAlign: TextAlign.center, style: AppTypography.sectionTitle),
+            if (subtitle != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(subtitle!, textAlign: TextAlign.center, style: AppTypography.caption),
+            ],
+            if (action != null) ...[const SizedBox(height: AppSpacing.xl), action!],
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                onPressed: onAction,
+                icon: Icon(icon, size: 17),
+                label: Text(actionLabel!),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorView extends ConsumerWidget {
+  final String message;
+  final VoidCallback? onRetry;
+  const ErrorView({super.key, required this.message, this.onRetry});
+
+  factory ErrorView.from(Object? error, {VoidCallback? onRetry}) {
+    return ErrorView(message: friendlyError(error), onRetry: onRetry);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = ref.s;
+    final text = message.contains('Exception') || message.contains('Error:')
+        ? friendlyError(message, lang: s.lang)
+        : message;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(
+                color: AppColors.scaffold,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_rounded, size: 48, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              s.loadFailed,
+              style: AppTypography.sectionTitle.copyWith(fontSize: 16),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(text, textAlign: TextAlign.center, style: AppTypography.caption),
+            if (onRetry != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: Text(s.retryAction),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(180, 48)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

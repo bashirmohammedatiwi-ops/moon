@@ -1,0 +1,68 @@
+{
+  "name": "alhayaa-pos-sync",
+  "version": "1.0.4",
+  "description": "Alhayaa POS inventory sync — SQL Server to VPS",
+  "main": "dist/main.js",
+  "author": "Alhayaa",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && electron .",
+    "dev": "tsc && electron .",
+    "dist": "npm run build && electron-builder --win",
+    "dist:portable": "npm run build && electron-builder --win portable"
+  },
+  "license": "ISC",
+  "private": true,
+  "build": {
+    "appId": "com.alhayaa.pos-sync",
+    "productName": "Alhayaa POS Sync",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "renderer/**/*",
+      "config.example.json",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist/main.js"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "signAndEditExecutable": false,
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "portable": {
+      "artifactName": "Alhayaa-POSSync-Portable-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "shortcutName": "Alhayaa POS Sync",
+      "installerLanguages": ["en_US", "ar_SA"],
+      "language": "1025",
+      "artifactName": "Alhayaa-POSSync-Setup-${version}.${ext}"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.16.1",
+    "iconv-lite": "^0.6.3",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/mssql": "^12.3.0",
+    "@types/node": "^25.9.1",
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1",
+    "typescript": "^6.0.3"
+  }
+}

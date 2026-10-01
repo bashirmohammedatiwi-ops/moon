@@ -1,0 +1,5 @@
+.env
+backups/
+nginx/default.conf
+admin-static/
+store-static/

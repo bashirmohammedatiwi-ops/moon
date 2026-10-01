@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+INFRA_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ADMIN_ROOT="$(cd "$INFRA_ROOT/../admin-desktop" && pwd)"
+OUT_DIR="$INFRA_ROOT/admin-static"
+STAGING_DIR="$INFRA_ROOT/admin-static.__staging"
+BACKUP_DIR="$INFRA_ROOT/admin-static.__old"
+
+if [[ ! -f "$ADMIN_ROOT/package.json" ]]; then
+  echo "admin-desktop not found at $ADMIN_ROOT"
+  exit 1
+fi
+
+if [[ -f "$INFRA_ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$INFRA_ROOT/.env"
+  set +a
+fi
+
+API_BASE="${NEXT_PUBLIC_API_BASE:-/api/v1}"
+MEDIA_BASE="${NEXT_PUBLIC_MEDIA_BASE:-/media}"
+VPS_ORIGIN="${API_BASE%/api/v1}"
+VPS_ORIGIN="${VPS_ORIGIN%/api}"
+if [[ "$API_BASE" == /* ]]; then
+  VPS_ORIGIN="(same host as admin)"
+fi
+CATALOG_HUB_URL="${NEXT_PUBLIC_CATALOG_HUB_URL:-/catalog-hub}"
+
+GIT_SHA="$(git -C "$ADMIN_ROOT/.." rev-parse --short HEAD 2>/dev/null || echo "unknown")"
+BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+echo "==> Building admin web panel"
+echo "    Commit: $GIT_SHA @ $BUILD_TIME"
+echo "    API:    $API_BASE"
+echo "    Media:  $MEDIA_BASE"
+echo "    Catalog: $CATALOG_HUB_URL"
+
+cd "$ADMIN_ROOT"
+
+if [[ -f package-lock.json ]]; then
+  npm ci --legacy-peer-deps
+else
+  npm install --legacy-peer-deps
+fi
+
+NEXT_PUBLIC_API_BASE="$API_BASE" \
+NEXT_PUBLIC_MEDIA_BASE="$MEDIA_BASE" \
+NEXT_PUBLIC_CATALOG_HUB_URL="$CATALOG_HUB_URL" \
+NEXT_PUBLIC_BASE_PATH="/admin" \
+NEXT_PUBLIC_BUILD_SHA="$GIT_SHA" \
+NEXT_PUBLIC_BUILD_TIME="$BUILD_TIME" \
+npm run build:web
+
+rm -rf "$STAGING_DIR"
+mkdir -p "$STAGING_DIR"
+cp -r out/. "$STAGING_DIR/"
+chmod -R a+rX "$STAGING_DIR"
+
+verify_admin_static() {
+  local dir="$1"
+  local missing=0
+  for rel in index.html login/index.html catalog-import/index.html products/index.html privacy/index.html terms/index.html; do
+    if [[ ! -f "$dir/$rel" ]]; then
+      echo "ERROR: missing $dir/$rel"
+      missing=1
+    fi
+  done
+  if [[ "$missing" -ne 0 ]]; then
+    return 1
+  fi
+  echo "OK  admin static pages verified under $dir"
+}
+
+if ! verify_admin_static "$STAGING_DIR"; then
+  echo "ERROR: Next.js export incomplete — keeping previous admin-static (if any)"
+  rm -rf "$STAGING_DIR"
+  exit 1
+fi
+
+# Atomic swap — never leave admin-static empty if staging is valid
+if [[ -d "$OUT_DIR" ]]; then
+  rm -rf "$BACKUP_DIR"
+  mv "$OUT_DIR" "$BACKUP_DIR"
+fi
+if ! mv "$STAGING_DIR" "$OUT_DIR"; then
+  echo "ERROR: failed to promote admin-static — restoring backup"
+  if [[ -d "$BACKUP_DIR" ]]; then
+    rm -rf "$OUT_DIR"
+    mv "$BACKUP_DIR" "$OUT_DIR"
+  fi
+  exit 1
+fi
+rm -rf "$BACKUP_DIR"
+
+chmod -R a+rX "$OUT_DIR"
+chmod a+x "$INFRA_ROOT" 2>/dev/null || true
+
+verify_admin_static "$OUT_DIR"
+
+echo "==> Admin web build ready: infra/admin-static/"

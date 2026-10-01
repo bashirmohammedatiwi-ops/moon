@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/cache/home_image_precache.dart';
+import '../../core/utils/friendly_error.dart';
+import '../../core/utils/responsive.dart';
+import '../../core/widgets/shimmer_box.dart';
+import '../../core/widgets/states.dart';
+import '../catalog/catalog_providers.dart';
+import '../catalog/catalog_refresh.dart';
+import 'home_section_renderer.dart';
+import 'widgets/home_scroll_perf.dart';
+import 'widgets/home_theme.dart';
+
+import '../../core/widgets/brand_art.dart';
+
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _precachedFor;
+
+  @override
+  Widget build(BuildContext context) {
+    final feed = ref.watch(homeFeedProvider);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: HomeTheme.canvas,
+        body: HomeCanvasBackground(
+          child: feed.when(
+            loading: () => const HomeLoadingSkeleton(),
+            error: (e, _) => ErrorView(
+              message: friendlyError(e),
+              onRetry: () async {
+                await refreshStorefrontCatalog(ref);
+              },
+            ),
+            data: (data) {
+              if (_precachedFor != data.hashCode.toString()) {
+                _precachedFor = data.hashCode.toString();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) precacheHomeFeedImages(context, data);
+                });
+              }
+
+              final slots = resolveHomeSectionSlots(data);
+              final bottomPad = Responsive.shellBottomReserve(context);
+
+              return RefreshIndicator(
+                color: HomeTheme.accent,
+                backgroundColor: HomeTheme.surface,
+                displacement: 48,
+                edgeOffset: MediaQuery.paddingOf(context).top,
+                onRefresh: () async {
+                  HapticFeedback.mediumImpact();
+                  await refreshStorefrontCatalog(ref);
+                },
+                child: CustomScrollView(
+                  cacheExtent: HomeScrollPerf.verticalCacheExtent,
+                  physics: HomeScrollPerf.physics,
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= slots.length) {
+                            return SizedBox(height: bottomPad);
+                          }
+
+                          final slot = slots[index];
+                          if (slot.isHero) {
+                            return RepaintBoundary(
+                              child: HeroHomeSection(section: slot.section),
+                            );
+                          }
+
+                          return Column(
+                            key: ValueKey(slot.section.id),
+                            children: [
+                              if (slot.isFirstAfterHero)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 72),
+                                  child: WaveDivider(),
+                                ),
+                              HomeSectionWidget(
+                                section: slot.section,
+                                isFirstAfterHero: slot.isFirstAfterHero,
+                              ),
+                            ],
+                          );
+                        },
+                        childCount: slots.length + 1,
+                        addAutomaticKeepAlives: false,
+                        addRepaintBoundaries: true,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}

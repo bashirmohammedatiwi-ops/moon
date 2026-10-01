@@ -1,0 +1,119 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Role } from "@prisma/client";
+import { isAdminViewRequest } from "../../common/admin-view.util";
+import { Public } from "../../common/decorators/public.decorator";
+import { Roles } from "../../common/decorators/roles.decorator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { CreateProductDto, QueryProductsDto, UpdateProductDto } from "./dto/product.dto";
+import { ProductsService } from "./products.service";
+
+@ApiTags("products")
+@Controller("products")
+export class ProductsController {
+  constructor(private readonly products: ProductsService) {}
+
+  @Public()
+  @Get()
+  list(@Req() req: any, @Query() q: QueryProductsDto) {
+    return this.products.list(q, !isAdminViewRequest(req));
+  }
+
+  // بحث منتج بالباركود للمتجر — يجب أن يسبق مسار :idOrSlug
+  @Public()
+  @Get("lookup/barcode")
+  lookupByBarcode(@Query("code") code: string) {
+    return this.products.lookupByBarcode(code, true);
+  }
+
+  // فحص وجود منتج بنفس الباركود (للوحة التحكم) — يجب أن يسبق مسار :idOrSlug
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Get("barcode-check")
+  barcodeCheck(@Query("barcode") barcode: string) {
+    return this.products.checkBarcode(barcode);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Get("without-images/count")
+  countWithoutImages() {
+    return this.products.countActiveWithoutImages();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Get("pos-stats")
+  posStats() {
+    return this.products.countPosStats();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Post("hide-without-images")
+  hideWithoutImages() {
+    return this.products.hideActiveWithoutImages();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Post("dedupe-images")
+  dedupeImages() {
+    return this.products.dedupeAllProductImages();
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Post("reorder")
+  reorder(@Body() body: { brandId: string; ids: string[] }) {
+    return this.products.reorder(body.brandId, body.ids ?? []);
+  }
+
+  @Public()
+  @Get(":idOrSlug")
+  findOne(@Req() req: any, @Param("idOrSlug") idOrSlug: string) {
+    return this.products.findOne(idOrSlug, !isAdminViewRequest(req));
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Post()
+  create(@Body() dto: CreateProductDto) {
+    return this.products.create(dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.STAFF)
+  @Patch(":id")
+  update(@Param("id") id: string, @Body() dto: UpdateProductDto) {
+    return this.products.update(id, dto);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.products.remove(id);
+  }
+}

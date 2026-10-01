@@ -1,0 +1,97 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/network/api_client.dart';
+import '../../data/models/brand.dart';
+import '../../data/models/category.dart';
+import '../../data/models/home_feed.dart';
+import '../../data/models/loyalty_summary.dart';
+import '../../data/models/product.dart';
+import '../../data/models/review.dart';
+import '../../data/services/api_service.dart';
+
+final homeFeedProvider = FutureProvider.autoDispose<HomeFeed>((ref) {
+  ref.keepAlive();
+  return ref.read(apiServiceProvider).getHome();
+});
+
+final offersFeedProvider = FutureProvider.autoDispose<HomeFeed>((ref) async {
+  ref.keepAlive();
+  final api = ref.read(apiServiceProvider);
+  try {
+    return await api.getOffers();
+  } catch (_) {
+    return api.getHome().then((home) => HomeFeed(
+          sections: const [],
+          flashSale: home.flashSale,
+          promoProducts: home.promoProducts.isNotEmpty
+              ? home.promoProducts
+              : home.flashSale.products,
+          settings: home.settings,
+        )).catchError((_) => const HomeFeed());
+  }
+});
+
+final categoriesProvider = FutureProvider<List<Category>>((ref) async {
+  ref.keepAlive();
+  // أول تحميل بعد التحديث يجلب من الشبكة (مفتاح كاش جديد + TTL أقصر)
+  return ref.read(apiServiceProvider).getCategories(forceRefresh: false);
+});
+
+/// إعادة تحميل الأقسام من السيرفر مباشرة (يسحب للتحديث / إعادة المحاولة).
+Future<List<Category>> refreshCategories(WidgetRef ref) async {
+  await ref.read(apiCacheProvider).remove('categories_all_v2');
+  await ref.read(apiCacheProvider).remove('categories_all_v1');
+  ref.invalidate(categoriesProvider);
+  return ref.read(apiServiceProvider).getCategories(forceRefresh: true);
+}
+
+final brandsProvider = FutureProvider<List<Brand>>((ref) {
+  ref.keepAlive();
+  return ref.read(apiServiceProvider).getBrands(all: true);
+});
+
+/// براندات مرتبطة بقسم رئيسي.
+final categoryBrandsProvider = FutureProvider.family<List<Brand>, String>((ref, categoryId) {
+  return ref.read(apiServiceProvider).getBrands(categoryId: categoryId);
+});
+
+/// براندات مرتبطة بقسم فرعي.
+final subcategoryBrandsProvider = FutureProvider.family<List<Brand>, String>((ref, subcategoryId) {
+  return ref.read(apiServiceProvider).getBrands(subcategoryId: subcategoryId);
+});
+
+final productDetailProvider =
+    FutureProvider.family.autoDispose<Product, String>((ref, idOrSlug) async {
+  final api = ref.read(apiServiceProvider);
+  final product = await api.getProduct(idOrSlug, forceRefresh: false);
+
+  final imageStamp = '${product.coverUrl}|${product.galleryUrls.join(',')}';
+  unawaited(() async {
+    try {
+      final fresh = await api.getProduct(idOrSlug, forceRefresh: true);
+      final freshStamp = '${fresh.coverUrl}|${fresh.galleryUrls.join(',')}';
+      if (freshStamp != imageStamp) ref.invalidateSelf();
+    } catch (_) {}
+  }());
+
+  return product;
+});
+
+final loyaltyProvider = FutureProvider.autoDispose<LoyaltySummary>((ref) {
+  return ref.read(apiServiceProvider).getLoyalty();
+});
+
+final productReviewsProvider =
+    FutureProvider.family.autoDispose<List<Review>, String>((ref, productId) async {
+  return ref.read(apiServiceProvider).getProductReviews(productId);
+});
+
+/// منتجات مشابهة من نفس القسم (يستثني المنتج الحالي).
+final similarProductsProvider = FutureProvider.autoDispose
+    .family<List<Product>, ({String categoryId, String excludeId})>((ref, args) async {
+  final page = await ref
+      .read(apiServiceProvider)
+      .getProducts(categoryId: args.categoryId, limit: 10);
+  return page.items.where((p) => p.id != args.excludeId).take(8).toList();
+});

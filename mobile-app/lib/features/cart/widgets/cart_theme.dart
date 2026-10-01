@@ -1,0 +1,108 @@
+import 'package:flutter/material.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/responsive.dart';
+import '../../home/widgets/home_theme.dart';
+
+/// ثيم السلة — تركواز اللوغو بأشكال ناعمة. الثوابت تقرأ من AppColors
+/// (المصدر الوحيد) للحفاظ على هوية موحدة عبر التطبيق.
+abstract final class CartTheme {
+  // ألوان اللوغو — aliases للهوية الموحدة
+  static const brand = AppColors.primary;
+  static const brandDark = AppColors.primaryDark;
+  static const brandSoft = AppColors.primaryLight;
+  static const brandWash = AppColors.primarySoft;
+  static const charcoal = AppColors.ink;
+
+  static const bg = AppColors.scaffold;
+  static const card = Colors.white;
+  static const radiusXl = 30.0;
+  static const radiusLg = 24.0;
+  static const radiusMd = 18.0;
+  static const radiusSm = 14.0;
+  static const hPad = 18.0;
+  static const itemGap = 12.0;
+  static const imageSize = 92.0;
+
+  static const brandGradient = AppColors.primaryGradient;
+
+  static double shellNavReserve(BuildContext context) {
+    return Responsive.shellBottomReserve(context);
+  }
+
+  static final List<BoxShadow> softShadow = [
+    BoxShadow(
+      color: brand.withValues(alpha: 0.07),
+      blurRadius: 18,
+      offset: const Offset(0, 6),
+      spreadRadius: -4,
+    ),
+    BoxShadow(
+      color: charcoal.withValues(alpha: 0.04),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+  ];
+
+  static final List<BoxShadow> dockShadow = [
+    BoxShadow(
+      color: brand.withValues(alpha: 0.1),
+      blurRadius: 22,
+      offset: const Offset(0, -6),
+      spreadRadius: -4,
+    ),
+  ];
+
+  static BoxDecoration cardDecoration({Color? color}) => BoxDecoration(
+        color: color ?? card,
+        borderRadius: BorderRadius.circular(radiusLg),
+        border: Border.all(color: brandSoft),
+        boxShadow: softShadow,
+      );
+
+  static BoxDecoration pillDecoration({Color? fill}) => BoxDecoration(
+        color: fill ?? brandWash,
+        borderRadius: BorderRadius.circular(999),
+      );
+
+  static BoxDecoration headerDecoration() => BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [
+            brandSoft,
+            bg,
+            Colors.white,
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(radiusXl)),
+      );
+}
+
+class CartSectionLabel extends StatelessWidget {
+  final String title;
+
+  const CartSectionLabel({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(CartTheme.hPad, 18, CartTheme.hPad, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: CartTheme.brandGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 17),
+          ),
+          const SizedBox(width: 10),
+          Text(title, style: HomeTheme.sectionTitle(size: 16, color: CartTheme.charcoal)),
+        ],
+      ),
+    );
+  }
+}

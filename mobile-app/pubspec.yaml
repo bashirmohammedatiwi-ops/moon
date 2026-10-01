@@ -1,0 +1,63 @@
+name: qamar_alzaman
+description: "قمر الزمان — متجر مستحضرات التجميل"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Routing
+  go_router: ^14.2.0
+
+  # Networking
+  dio: ^5.5.0
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.0
+
+  # UI / UX
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.4.0
+  flutter_cache_manager: ^3.4.1
+  shimmer: ^3.0.0
+  smooth_page_indicator: ^1.2.0
+  carousel_slider: ^5.0.0
+  flutter_rating_bar: ^4.0.1
+  intl: ^0.20.2
+  url_launcher: ^6.3.0
+  video_player: ^2.9.2
+  mobile_scanner: ^7.0.1
+  package_info_plus: ^8.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/app_icon_source.png
+  adaptive_icon_background: "#F2FBFC"
+  adaptive_icon_foreground: assets/images/app_icon_source.png
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/qamar_logo.png
+    - assets/images/qamar_mark.png
+    - assets/images/nav_leaf.png
+    - assets/images/app_icon_source.png
+    - assets/images/app_icon_transparent.png
+    - assets/videos/welcome.mp4
